@@ -3,3 +3,32 @@ title: "Project"
 output: html_document
 ---
 
+```{r}
+data <- read.csv("../data/Top_Songs_On_Spotify.csv")
+```
+
+```{r}
+str(data)
+head(data)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

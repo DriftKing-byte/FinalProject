@@ -1,6 +1,6 @@
 ---
 title: "CDS 101 – Example EDA Walkthrough (Rubric-Aligned)"
-author: "Your Name Here"
+author: "Sai Ashutosh Chellarapu"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
 output:
   html_document:
@@ -44,7 +44,7 @@ We will:
 This chunk illustrates how to **load** and **inspect** your data, covering the **Data Acquisition & Description** rubric criterion.
 
 ```{r load-data}
-data <- read.csv("../data/sample_data.csv")
+data <- read.csv("../data/Top_Songs_On_Spotify.csv")
 str(data)
 head(data)
 ```
@@ -94,7 +94,7 @@ This plot addresses both **EDA** and **Visualization Quality**:
 - It uses appropriate labels and a clear title.
 
 ```{r hist-x, fig.cap="Histogram of x (EDA rubric: distribution of a key numeric variable)."}
-ggplot(data, aes(x = x)) +
+ggplot(data, aes(x = pop)) +
   geom_histogram(bins = 15, color = "white") +
   labs(
     title = "Distribution of x",
@@ -120,7 +120,7 @@ This visualization supports:
 - Showing a clear, labeled plot (**Visualization Quality**).
 
 ```{r boxplot-y-group, fig.cap="Boxplot of y by group (EDA rubric: group comparison)."}
-ggplot(data, aes(x = group, y = y)) +
+ggplot(data, aes(x = bpm, y = pop)) +
   geom_boxplot() +
   labs(
     title = "Distribution of y by Group",
@@ -144,7 +144,7 @@ You might relate this to a question such as:
 This addresses **EDA** and prepares for **Modeling Approach** by visualizing relationships between variables.
 
 ```{r scatter, fig.cap="Scatter plot of y versus x, colored by group (EDA rubric: relationship between variables)."}
-ggplot(data, aes(x = x, y = y, color = group)) +
+ggplot(data, aes(x = bpm, y = pop, color = group)) +
   geom_point(alpha = 0.7) +
   labs(
     title = "Relationship Between x and y by Group",
