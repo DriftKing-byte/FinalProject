@@ -12,23 +12,153 @@ str(data)
 head(data)
 ```
 
+```{r}
+numeric_df <- data[, sapply(data, is.numeric)]
+cor_matrix <- cor(numeric_df)
+```
+
+```{r}
+cor_matrix
+```
+
+#Experimented; found out that removing the negative correlations and columns 1 and 2 resulted
+# in lowest RMSE
+
+```{r}
+data <- data[, -c(1, 2, 4, 7, 9, 11)]
+```
+
+```{r}
+install.packages("fastDummies")
+library(fastDummies)
+```
+```{r}
+df <- dummy_cols(
+  data,
+  remove_selected_columns = TRUE,     
+  remove_first_dummy = FALSE          
+)
+```
+
+```{r}
+head(df)
+```
+
+# row by col
+```{r}
+dim(df)
+```
+
+# train test split
+```{r}
+set.seed(123)
+
+train_data <- sample(1:nrow(df), 482)
+
+train <- df[train_data,]
+test <- df[-train_data,]
+```
+
+```{r}
+nrow(train) 
+nrow(test)
+nrow(train) + nrow(test)
+```
+
+```{r}
+y_train <- train$pop
+x_train <- train[, !names(train) %in% "pop"]
+
+y_test <- test$pop
+x_test <- test[, !names(test) %in% "pop"]
+```
+
+```{r}
+install.packages("randomForest")
+```
+
+```{r}
+library(randomForest)
+
+model1 <- randomForest(
+  x = x_train,
+  y = y_train,
+  ntree = 500,
+  mtry = floor(sqrt(ncol(x_train))),
+  importance = TRUE
+)
+```
+```{r}
+preds <- predict(model1, x_test)
+```
+
+```{r}
+rmse <- sqrt(mean((preds - y_test)^2))
+```
+
+```{r}
+rmse
+```
 
 
+```{r}
+library(torch)
+library(luz)
+
+x_train_tensor <- torch_tensor(as.matrix(x_train), dtype = torch_float())
+y_train_tensor <- torch_tensor(as.matrix(y_train), dtype = torch_float())  
+x_test_tensor <- torch_tensor(as.matrix(x_test), dtype = torch_float())
+y_test_tensor <- torch_tensor(as.matrix(y_test), dtype = torch_float())  
+```
+
+```{r}
+train_ds <- tensor_dataset(x_train_tensor, y_train_tensor)
+test_ds <- tensor_dataset(x_test_tensor, y_test_tensor)
+train_dl <- dataloader(train_ds, batch_size = 32, shuffle = TRUE)
+test_dl <- dataloader(test_ds, batch_size = 32, shuffle = TRUE)
+```
+
+```{r}
+net <- nn_module(
+  "onelayer",
+  initialize = function() {
+    self$net <- nn_sequential(
+      nn_linear(ncol(x_train), 128),
+      nn_relu(),
+      nn_linear(128, 1)
+    )
+  },
+  forward = function(x) {
+    self$net(x)
+  }
+)
+```
 
 
+```{r}
+model2 <- net %>%
+  setup(
+    loss = nn_mse_loss(),   # regression loss
+    optimizer = optim_adam, 
+    metrics = list(luz_metric_rmse())  # mean absolute error
+  )
+```
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```{r}
+acc <- accelerator(cpu=TRUE)
+fitted1 <- model2 %>% 
+  fit(
+    train_dl, 
+    epochs = 20,
+    verbose = TRUE,
+    accelerator = acc
+  )
+```
+```{r}
+plot(fitted1)
+```
+#Overfitting not observed in neural network because rmse for test set was lower than train set. 
+```{r}
+evaluate(fitted1, test_dl)
+```
