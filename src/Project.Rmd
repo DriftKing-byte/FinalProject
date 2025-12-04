@@ -1,34 +1,71 @@
 ---
 title: "Project"
-output: html_document
+output:
+  flexdashboard::flex_dashboard:
+    vertical_layout: scroll
 ---
 
+
+EDA
+============
+
+Exploratory Data Analysis
+
+What is the effect of various factors of a song on its popularity and how do ensemble methods vs. neural network perform on predicting a song’s popularity? 
+-------
+
 ```{r}
+options(repos = c(CRAN = "https://cloud.r-project.org"))
 data <- read.csv("../data/Top_Songs_On_Spotify.csv")
 ```
 
-```{r}
+### Song Popularity Dataframe
+```{r, results='hide'}
 str(data)
 head(data)
 ```
+
+```{r}
+library(DT)
+
+# Make cor_matrix scrollable
+datatable(head(data, 10), 
+          options = list(
+            scrollX = TRUE,   # horizontal scroll
+            scrollY = "400px", # vertical scroll
+            paging = FALSE    # show all rows in scroll
+          ))
+
+```
+
 
 ```{r}
 numeric_df <- data[, sapply(data, is.numeric)]
 cor_matrix <- cor(numeric_df)
 ```
 
+
+
+### Correlation Matrix for Features
 ```{r}
-cor_matrix
+library(DT)
+
+# Make cor_matrix scrollable
+datatable(cor_matrix, 
+          options = list(
+            scrollX = TRUE,   # horizontal scroll
+            scrollY = "400px", # vertical scroll
+            paging = FALSE    # show all rows in scroll
+          ))
+
 ```
 
-#Experimented; found out that removing the negative correlations and columns 1 and 2 resulted
-# in lowest RMSE
 
 ```{r}
 data <- data[, -c(1, 2, 4, 7, 9, 11)]
 ```
 
-```{r}
+```{r, results='hide'}
 install.packages("fastDummies")
 library(fastDummies)
 ```
@@ -40,16 +77,43 @@ df <- dummy_cols(
 )
 ```
 
-```{r}
+
+```{r, results='hide'}
 head(df)
 ```
 
-# row by col
+EDA Continued
+==============
+Deleting negative correlations columns shown in correlation matrix and columns 1 and 2 (X and title) resulted in lowest RMSE
+
+One-hot encoded columns. This converted the categorical columns to numerical. For example, the artist column.
+
 ```{r}
+library(DT)
+
+# Make cor_matrix scrollable
+datatable(head(df[,c(1:12)]), 
+          options = list(
+            scrollX = TRUE,   # horizontal scroll
+            scrollY = "400px", # vertical scroll
+            paging = FALSE    # show all rows in scroll
+          ))
+
+```
+
+
+
+```{r, results='hide'}
 dim(df)
 ```
 
-# train test split
+
+Model Comparison: Random Forest Vs. Neural Network
+=========
+
+
+
+-------------
 ```{r}
 set.seed(123)
 
@@ -59,7 +123,7 @@ train <- df[train_data,]
 test <- df[-train_data,]
 ```
 
-```{r}
+```{r, results='hide'}
 nrow(train) 
 nrow(test)
 nrow(train) + nrow(test)
@@ -73,11 +137,19 @@ y_test <- test$pop
 x_test <- test[, !names(test) %in% "pop"]
 ```
 
-```{r}
+```{r, results='hide'}
 install.packages("randomForest")
 ```
 
 ```{r}
+complete_idx <- complete.cases(x_train)
+
+x_train <- x_train[complete_idx, ]
+y_train <- y_train[complete_idx]
+```
+
+
+```{r, results='hide'}
 library(randomForest)
 
 model1 <- randomForest(
@@ -88,14 +160,23 @@ model1 <- randomForest(
   importance = TRUE
 )
 ```
+
 ```{r}
-preds <- predict(model1, x_test)
+complete_idx_test <- complete.cases(x_test)
+
+x_test_clean <- x_test[complete_idx_test, ]
+y_test_clean <- y_test[complete_idx_test]
+```
+
+```{r}
+preds <- predict(model1, x_test_clean)
 ```
 
 ```{r}
 rmse <- sqrt(mean((preds - y_test)^2))
 ```
 
+Random Forest RMSE
 ```{r}
 rmse
 ```
@@ -144,8 +225,9 @@ model2 <- net %>%
   )
 ```
 
-
-```{r}
+-------
+Neural Network (Adam Optimizer, 20 epochs)
+```{r, results='hide'}
 acc <- accelerator(cpu=TRUE)
 fitted1 <- model2 %>% 
   fit(
@@ -155,10 +237,29 @@ fitted1 <- model2 %>%
     accelerator = acc
   )
 ```
-```{r}
-plot(fitted1)
-```
-#Overfitting not observed in neural network because rmse for test set was lower than train set. Dashboard upcoming.
+
+
+Overfitting not observed in neural network because rmse for test set was lower than train set.
+
+
 ```{r}
 evaluate(fitted1, test_dl)
 ```
+
+Neural Network Plot and Results
+================================
+```{r}
+plot(fitted1)
+```
+
+```{r, results='hide'}
+install.packages("flexdashboard")
+install.packages("crosstalk")
+```
+
+### Results
+
+The dnce or "dance" and dB or "decibels" of a song contributed most to the song's popularity.
+For model comparison, the ensemble method (Random Forest) achieved a lower RMSE than the neural network.
+The Random Forest achieved an RMSE of 12.8689 whereas the neural network achieved an RMSE of 14.207.
+This was due to the Random Forest better at capturing the non-linear relationships.
