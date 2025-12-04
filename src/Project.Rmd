@@ -158,7 +158,7 @@ fitted1 <- model2 %>%
 ```{r}
 plot(fitted1)
 ```
-#Overfitting not observed in neural network because rmse for test set was lower than train set. 
+#Overfitting not observed in neural network because rmse for test set was lower than train set. Dashboard upcoming.
 ```{r}
 evaluate(fitted1, test_dl)
 ```
