@@ -25,15 +25,20 @@ str(data)
 head(data)
 ```
 
+```{r, results = 'hide'}
+dim(data)
+```
+
+
 ```{r}
 library(DT)
 
-# Make cor_matrix scrollable
+
 datatable(head(data, 10), 
           options = list(
-            scrollX = TRUE,   # horizontal scroll
-            scrollY = "400px", # vertical scroll
-            paging = FALSE    # show all rows in scroll
+            scrollX = TRUE,  
+            scrollY = "400px",
+            paging = FALSE  
           ))
 
 ```
@@ -50,19 +55,18 @@ cor_matrix <- cor(numeric_df)
 ```{r}
 library(DT)
 
-# Make cor_matrix scrollable
 datatable(cor_matrix, 
           options = list(
-            scrollX = TRUE,   # horizontal scroll
-            scrollY = "400px", # vertical scroll
-            paging = FALSE    # show all rows in scroll
+            scrollX = TRUE, 
+            scrollY = "400px",
+            paging = FALSE    
           ))
 
 ```
 
 
 ```{r}
-data <- data[, -c(1, 2, 4, 7, 9, 11)]
+data <- data[, -c(1, 7, 10, 12)]
 ```
 
 ```{r, results='hide'}
@@ -89,18 +93,48 @@ Deleting negative correlations columns shown in correlation matrix and columns 1
 One-hot encoded columns. This converted the categorical columns to numerical. For example, the artist column.
 
 ```{r}
-library(DT)
-
-# Make cor_matrix scrollable
-datatable(head(df[,c(1:12)]), 
-          options = list(
-            scrollX = TRUE,   # horizontal scroll
-            scrollY = "400px", # vertical scroll
-            paging = FALSE    # show all rows in scroll
-          ))
-
+head(df[,c(1:12)])
 ```
 
+Top 10 List of Features for Song Popularity
+```{r}
+cor_matrix2 <- cor(df)
+pop_corr <- cor_matrix2[, "pop"]
+pop_corr <- pop_corr[names(pop_corr) != "pop"]
+pop_corr_sorted <- sort(abs(pop_corr), decreasing = TRUE)
+top_10 <- pop_corr_sorted[1:10]
+top_10
+```
+
+Best Features
+====================
+
+### Best Feature 1: Year
+```{r}
+library(ggplot2)
+ggplot(data, aes(x = year, y = pop)) + 
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm") + 
+  labs(
+    title = "Song Year vs Popularity",
+    x = "Year",
+    y = "Popularity"
+  ) 
+```
+
+
+### Best Feature 10: dB
+```{r}
+library(ggplot2)
+ggplot(data, aes(x = dB, y = pop)) + 
+  geom_point(alpha = 0.5) + 
+  geom_smooth(method = "lm") + 
+  labs(
+    title = "Song dB vs Popularity",
+    x = "dB",
+    y = "Popularity"
+  ) 
+```
 
 
 ```{r, results='hide'}
@@ -259,7 +293,4 @@ install.packages("crosstalk")
 
 ### Results
 
-The dnce or "dance" and dB or "decibels" of a song contributed most to the song's popularity.
-For model comparison, the ensemble method (Random Forest) achieved a lower RMSE than the neural network.
-The Random Forest achieved an RMSE of 12.8689 whereas the neural network achieved an RMSE of 14.207.
-This was due to the Random Forest better at capturing the non-linear relationships.
+Of the 10 features that correlated most with a song popularity, the year, artist, title, and dB of a song contributed most to a song's popularity. For model comparison, the ensemble method (Random Forest) achieved a lower RMSE than the neural network. The Random Forest achieved a lower RMSE than the neural network by roughly 1 point. This was due to the Random Forest better at capturing the non-linear relationships.

@@ -1,6 +1,6 @@
 ---
 title: "CDS 101 – Final Project Report"
-author: "Group Name / Members"
+author: "Team 5 / Sai, Shrikar, Godwin"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
 output:
   html_document:
@@ -16,119 +16,181 @@ output:
 
 # 1. Problem Definition
 
-- Clearly state the main problem or question you are investigating.  
-- Explain why it is interesting or important.  
-- Define the objective(s) of your analysis.  
-- Mention any key assumptions.
+What is the effect of various factors of a song on its popularity and how does Random Forest vs. neural network perform on predicting a song’s popularity? This is an interesting topic because predicting song popularity is an important method in personalizing songs for people. This method is used in companies like Spotify. The objectives are identifying the most correlated features of a song that can predict its popularity and training machine learning models to predict the popularity of songs. A key assumption are that this dataset represents the music that is available at large. Another key assumption is that predicting for these songs will help in predicting popularity for future songs as well. 
 
 # 2. Data Acquisition & Description
 
-- Name and source of the dataset(s).  
-- How you obtained the data (download link, API, etc.).  
-- Brief description of the variables / features (with units if relevant).  
-- Approximate size (rows, columns).  
-- Any ethical, privacy, or bias considerations (if applicable).
+The dataset is sourced from kaggle. The name of the dataset is Top_Songs_On_Spotify. The dataset was obtained from kaggle. Link:https://drive.google.com/drive/folders/1v7tfX47UdMiiyA134V0dKhwTajwCK2Oq?usp=share_link. Some of the features are genre, decibels, dance, etc. The size of the data is 603 rows by 19 columns. 
 
 ```{r setup-data, echo=FALSE, message=FALSE, warning=FALSE}
-# Example: load a dataset (replace with your own)
-# library(readr)
-# data <- read_csv("data/your_data.csv")
+data <- read.csv("data/Top_Songs_On_Spotify.csv")
+str(data)
+head(data)
 ```
 
 # 3. Data Cleaning & Preprocessing
 
-Describe the steps you took to make the data usable, for example:
+Data cleaning started off with taking only the numerical columns of the dataframe and creating a correlation matrix for those columns. The features correlated with song popularity the most were identified. Columns 1, 7, 10, and 12 were removed as they were not strongly correlated to the song popularity. The categorical variables were all one-hot encoded. 
 
-- Handling missing values (drop, impute, etc.).  
-- Fixing types (dates, numeric vs. categorical).  
-- Removing outliers (if done).  
-- Creating new features (feature engineering).  
-- Any scaling or encoding.
 
 ```{r cleaning, eval=FALSE}
-# Example pseudo-code for cleaning:
-# data_clean <- data |>
-#   dplyr::filter(!is.na(target_variable)) |>
-#   dplyr::mutate(
-#     new_feature = some_transformation(old_feature)
-#   )
+numeric_df <- data[, sapply(data, is.numeric)]
+data <- data[, -c(1, 7, 10, 12)]
+install.packages("fastDummies")
+library(fastDummies)
+
+df <- dummy_cols(
+  data,
+  remove_selected_columns = TRUE,     
+  remove_first_dummy = FALSE          
+)
 ```
 
 # 4. Exploratory Data Analysis (EDA)
 
-This section maps directly to the **EDA** part of the rubric:
-
-- Summary statistics  
-- Visualizations  
-- Interpretation connected to the research question  
+The exploratory data analysis was done with the correlation matrix for the features most correlated with song popularity. The top three features strongest for predicting song popularity were year, top.genre_pop, artist_Martin Solveig, title_L.A.LOVE followed by 4 other titles, and then top.genre_dance pop, and dB. The identification of these features as most related to song popularity show that year, genre, artist, title, and dB are the most important factors that contribute to a song's popularity, respectively. 
 
 ```{r eda-summary, message=FALSE, warning=FALSE}
-# library(dplyr)
-# summary(data_clean)
+numeric_df <- data[, sapply(data, is.numeric)]
+cor_matrix <- cor(numeric_df)
+cor_matrix
 ```
 
 ```{r eda-plot-example, message=FALSE, warning=FALSE, fig.cap="Example histogram of a numeric variable (EDA rubric)."}
-# library(ggplot2)
-# ggplot(data_clean, aes(x = some_numeric_variable)) +
-#   geom_histogram(binwidth = 5, color = "white") +
-#   labs(x = "Some Variable", y = "Count", title = "Distribution of Some Variable")
+library(ggplot2)
+ggplot(data, aes(x = year, y = pop)) + 
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm") + 
+  labs(
+    title = "Song Popularity vs Year",
+    x = "Year",
+    y = "Popularity"
+  )
+library(ggplot2)
+ggplot(data, aes(x = dB, y = pop)) + 
+  geom_point(alpha = 0.5) + 
+  geom_smooth(method = "lm") + 
+  labs(
+    title = "Song dB vs Popularity",
+    x = "dB",
+    y = "Popularity"
+  ) 
 ```
 
 # 5. Visualization Quality and Storytelling
 
 Use this section to satisfy the **Visualization Quality** rubric criterion:
 
-- Explain why your plot types are appropriate.  
-- Comment on labels, legends, colors, and overall readability.  
-- Mention any steps you took to make plots accessible and interpretable.
+The plots that were made were for the 1st best feature at predicting song popularity and the 10th best feature. Another plot was made for the neural network's performance on training data. A linear model was made with the margin of error shown. The data points also had half thickness. The plots are overall very clear and readable. All the datapoints are clear. Steps taken to make the plot clear was to clearly label the charts and give alpha = 0.5. This enabled the dots to be seen clearly. 
 
 # 6. Modeling Approach
 
-Explain how you framed the problem and which models you chose:
-
-- Type of task (regression, classification, etc.).  
-- Baseline model or heuristic, if used.  
-- Main model(s) chosen and why they are appropriate.
+The problem was a regression problem as song popularity needed to be calculated. However, there were non-linear relationships that could be captured as well. This was because of the categorical columns included within the dataset. Our baseline model was selecting a single feature in determining popularity. We believed that the artist feature would best determine popularity. Our main models were the random forest and neural network and these performed well with the selected features after feature engineering. These are the most appropriate models because an ensemble model like random forest is known to capture both linear and non-linear relationships very well and sometimes even outperform neural networks. The neural network is appropriate as well because it would be a good comparison to see if the adam optimizer which is good at capturing non-linear relationships as well could capture those of the dataset in comparison to the random forest. 
 
 # 7. Model Implementation & Evaluation
 
-This corresponds to the **Model Implementation & Evaluation** rubric criterion.
+All features except columns 1, 7, 10, and 12 were used. This included features such as year, bpm, dnce, dB, val, acous, and spch. The data was split with 80% for training and the remaining 20% for testing. The RMSE was used as the loss metric. A plot showing the performance on train data with loss and rmse is shown. The loss for test data was lower than the loss for the train data so there was no overfitting.
 
-Describe:
-
-- Features used.  
-- Data splitting strategy (train/test or cross-validation).  
-- Metrics used (accuracy, F1, RMSE, etc.).  
-- Tables/plots summarizing performance.  
-- A short interpretation of each metric/plot.
 
 ```{r modeling, eval=FALSE}
-# Example structure:
-# set.seed(123)
-# train_index <- sample(seq_len(nrow(data_clean)), size = 0.8 * nrow(data_clean))
-# train <- data_clean[train_index, ]
-# test  <- data_clean[-train_index, ]
-#
-# model <- glm(target ~ ., data = train, family = binomial)
-# preds <- predict(model, newdata = test, type = "response")
-# # compute metrics...
+set.seed(123)
+
+train_data <- sample(1:nrow(df), 482)
+
+train <- df[train_data,]
+test <- df[-train_data,]
+
+nrow(train) 
+nrow(test)
+nrow(train) + nrow(test)
+
+y_train <- train$pop
+x_train <- train[, !names(train) %in% "pop"]
+
+y_test <- test$pop
+x_test <- test[, !names(test) %in% "pop"]
+
+install.packages("randomForest")
+
+complete_idx <- complete.cases(x_train)
+
+x_train <- x_train[complete_idx, ]
+y_train <- y_train[complete_idx]
+
+library(randomForest)
+
+model1 <- randomForest(
+  x = x_train,
+  y = y_train,
+  ntree = 500,
+  mtry = floor(sqrt(ncol(x_train))),
+  importance = TRUE
+)
+
+complete_idx_test <- complete.cases(x_test)
+
+x_test_clean <- x_test[complete_idx_test, ]
+y_test_clean <- y_test[complete_idx_test]
+
+preds <- predict(model1, x_test_clean)
+
+rmse <- sqrt(mean((preds - y_test)^2))
+
+library(torch)
+library(luz)
+
+x_train_tensor <- torch_tensor(as.matrix(x_train), dtype = torch_float())
+y_train_tensor <- torch_tensor(as.matrix(y_train), dtype = torch_float())  
+x_test_tensor <- torch_tensor(as.matrix(x_test), dtype = torch_float())
+y_test_tensor <- torch_tensor(as.matrix(y_test), dtype = torch_float())  
+
+train_ds <- tensor_dataset(x_train_tensor, y_train_tensor)
+test_ds <- tensor_dataset(x_test_tensor, y_test_tensor)
+train_dl <- dataloader(train_ds, batch_size = 32, shuffle = TRUE)
+test_dl <- dataloader(test_ds, batch_size = 32, shuffle = TRUE)
+
+net <- nn_module(
+  "onelayer",
+  initialize = function() {
+    self$net <- nn_sequential(
+      nn_linear(ncol(x_train), 128),
+      nn_relu(),
+      nn_linear(128, 1)
+    )
+  },
+  forward = function(x) {
+    self$net(x)
+  }
+)
+
+model2 <- net %>%
+  setup(
+    loss = nn_mse_loss(),   # regression loss
+    optimizer = optim_adam, 
+    metrics = list(luz_metric_rmse())  # mean absolute error
+  )
+
+acc <- accelerator(cpu=TRUE)
+fitted1 <- model2 %>% 
+  fit(
+    train_dl, 
+    epochs = 20,
+    verbose = TRUE,
+    accelerator = acc
+  )
+
+evaluate(fitted1, test_dl)
+
+plot(fitted1)
 ```
 
 # 8. Conclusions & Recommendations
 
-Summarize the key takeaways:
-
-- Answer your original research question(s) directly.  
-- Highlight the most important patterns or relationships you found.  
-- Discuss limitations (data size, bias, missing variables, etc.).  
-- Suggest possible extensions or future work.
+Of the 10 features that correlated most with a song popularity, the year, artist, title, and dB of a song contributed most to a song's popularity. For model comparison, the ensemble method (Random Forest) achieved a lower RMSE than the neural network. The Random Forest achieved a lower RMSE than the neural network by roughly 1 point. This was due to the Random Forest better at capturing the non-linear relationships. The limitations are the size of the data as there are much more songs in the real world. There could be bias because these songs were only from one country and songs worldwide weren't included. Missing variables could be more factors of songs such as energy, tempo, theme, lyric content, etc.Future extensions could be including the lyric content of the song and using an llm to predict song popularity.
 
 # 9. Code Quality & Reproducibility
 
-Briefly document how someone else can reproduce your results:
-
-- Which R scripts or Rmd files to run.  
-- Any required R packages.  
+Project.Rmd should be run to reproduce the same results. Required R packages would be ggplot2, fastDummies, randomForest, flexdashboard, and crosstalk.
 
 ```{r session-info, echo=FALSE}
 sessionInfo()
@@ -136,12 +198,8 @@ sessionInfo()
 
 # 10. References
 
-List any references you used, such as:
-
-- Dataset documentation.  
-- Research papers or articles.  
-- Tutorials or blog posts.
+The link to the dataset:https://drive.google.com/drive/folders/1v7tfX47UdMiiyA134V0dKhwTajwCK2Oq?usp=share_link
 
 # Appendix (Optional)
 
-Include extra plots, diagnostic checks, or model comparisons if needed.
+
