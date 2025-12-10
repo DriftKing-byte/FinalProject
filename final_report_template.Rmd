@@ -12,7 +12,6 @@ output:
     toc: true
 ---
 
-> Replace this template text with your own writing, keeping the headings and overall structure aligned with the **CDS 101 project rubric**.
 
 # 1. Problem Definition
 
@@ -20,7 +19,7 @@ What is the effect of various factors of a song on its popularity and how does R
 
 # 2. Data Acquisition & Description
 
-The dataset is sourced from kaggle. The name of the dataset is Top_Songs_On_Spotify. The dataset was obtained from kaggle. Link:https://drive.google.com/drive/folders/1v7tfX47UdMiiyA134V0dKhwTajwCK2Oq?usp=share_link. Some of the features are genre, decibels, dance, etc. The size of the data is 603 rows by 19 columns. 
+The dataset is sourced from kaggle. The name of the dataset is Top_Songs_On_Spotify. The dataset was obtained from kaggle. Link:https://drive.google.com/drive/folders/1v7tfX47UdMiiyA134V0dKhwTajwCK2Oq?usp=share_link. Some of the features are genre, decibels, dance, etc. The size of the data is 603 rows by 15 columns. 
 
 ```{r setup-data, echo=FALSE, message=FALSE, warning=FALSE}
 data <- read.csv("data/Top_Songs_On_Spotify.csv")
@@ -30,13 +29,12 @@ head(data)
 
 # 3. Data Cleaning & Preprocessing
 
-Data cleaning started off with taking only the numerical columns of the dataframe and creating a correlation matrix for those columns. The features correlated with song popularity the most were identified. Columns 1, 7, 10, and 12 were removed as they were not strongly correlated to the song popularity. The categorical variables were all one-hot encoded. 
+Data cleaning started off with taking only the numerical columns of the dataframe and creating a correlation matrix for those columns. The features correlated with song popularity the most were identified. Columns 1, 2, 3, 7, 10, and 12 were removed as they were not strongly correlated to the song popularity.
 
 
-```{r cleaning, eval=FALSE}
+```{r cleaning}
 numeric_df <- data[, sapply(data, is.numeric)]
-data <- data[, -c(1, 7, 10, 12)]
-install.packages("fastDummies")
+data <- data[, -c(1, 2, 3, 7, 10, 12)]
 library(fastDummies)
 
 df <- dummy_cols(
@@ -53,7 +51,7 @@ The exploratory data analysis was done with the correlation matrix for the featu
 ```{r eda-summary, message=FALSE, warning=FALSE}
 numeric_df <- data[, sapply(data, is.numeric)]
 cor_matrix <- cor(numeric_df)
-cor_matrix
+heatmap(cor_matrix)
 ```
 
 ```{r eda-plot-example, message=FALSE, warning=FALSE, fig.cap="Example histogram of a numeric variable (EDA rubric)."}
@@ -66,15 +64,13 @@ ggplot(data, aes(x = year, y = pop)) +
     x = "Year",
     y = "Popularity"
   )
-library(ggplot2)
-ggplot(data, aes(x = dB, y = pop)) + 
-  geom_point(alpha = 0.5) + 
-  geom_smooth(method = "lm") + 
+ggplot(data, aes(x = dB, y = pop)) +
+  geom_boxplot(fill = "lightblue", alpha = 0.7) +
   labs(
-    title = "Song dB vs Popularity",
-    x = "dB",
+    title = "dB vs. Popularity",
+    x = "dB Category",
     y = "Popularity"
-  ) 
+  )
 ```
 
 # 5. Visualization Quality and Storytelling
@@ -92,7 +88,7 @@ The problem was a regression problem as song popularity needed to be calculated.
 All features except columns 1, 7, 10, and 12 were used. This included features such as year, bpm, dnce, dB, val, acous, and spch. The data was split with 80% for training and the remaining 20% for testing. The RMSE was used as the loss metric. A plot showing the performance on train data with loss and rmse is shown. The loss for test data was lower than the loss for the train data so there was no overfitting.
 
 
-```{r modeling, eval=FALSE}
+```{r}
 set.seed(123)
 
 train_data <- sample(1:nrow(df), 482)
@@ -104,13 +100,13 @@ nrow(train)
 nrow(test)
 nrow(train) + nrow(test)
 
+
 y_train <- train$pop
 x_train <- train[, !names(train) %in% "pop"]
 
 y_test <- test$pop
 x_test <- test[, !names(test) %in% "pop"]
 
-install.packages("randomForest")
 
 complete_idx <- complete.cases(x_train)
 
@@ -136,6 +132,10 @@ preds <- predict(model1, x_test_clean)
 
 rmse <- sqrt(mean((preds - y_test)^2))
 
+rmse
+```
+
+```{r}
 library(torch)
 library(luz)
 
@@ -180,7 +180,9 @@ fitted1 <- model2 %>%
   )
 
 evaluate(fitted1, test_dl)
+```
 
+```{r}
 plot(fitted1)
 ```
 
